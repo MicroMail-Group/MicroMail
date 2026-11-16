@@ -1,6 +1,7 @@
-<center>
+<div align="center">
+  <h1>Welcome to My Profile</h1>
   <img src="assets/micromail-multichromatic-gradient.png" height="128" />
-</center>
+</div>
 
 # MicroMail
 
