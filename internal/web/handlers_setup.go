@@ -191,6 +191,10 @@ func (h *SetupHandlers) InitializeSetup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// Always grant administrator rights to the designated setup admin account
+	_ = h.store.SetUserAdmin(user.ID, true)
+	user.IsAdmin = true
+
 	// Ensure dedicated postmaster mailbox exists when MailDomain is configured
 	if req.MailDomain != "" && req.MailDomain != "localhost" {
 		postmasterEmail := "postmaster@" + req.MailDomain

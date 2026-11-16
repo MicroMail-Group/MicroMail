@@ -41,6 +41,8 @@ func main() {
 	if err != nil {
 		log.Printf("[Store] Error ensuring admin user: %v", err)
 	} else {
+		_ = st.SetUserAdmin(adminUser.ID, true)
+		adminUser.IsAdmin = true
 		log.Printf("[Store] Admin user ready: %s (ID: %s)", adminUser.Email, adminUser.ID)
 	}
 

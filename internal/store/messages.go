@@ -299,6 +299,33 @@ func (s *Store) ListUsers() ([]*User, error) {
 	return users, nil
 }
 
+func (s *Store) SetUserAdmin(userID string, isAdmin bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	isAdminInt := 0
+	if isAdmin {
+		isAdminInt = 1
+	}
+
+	_, err := s.db.Exec(`UPDATE users SET is_admin = ? WHERE id = ?`, isAdminInt, userID)
+	return err
+}
+
+func (s *Store) SetUserAdminByEmail(email string, isAdmin bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	isAdminInt := 0
+	if isAdmin {
+		isAdminInt = 1
+	}
+
+	cleanEmail := strings.ToLower(strings.TrimSpace(email))
+	_, err := s.db.Exec(`UPDATE users SET is_admin = ? WHERE LOWER(email) = ?`, isAdminInt, cleanEmail)
+	return err
+}
+
 func (s *Store) UpdateUserSettings(userID, displayName, signature string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
