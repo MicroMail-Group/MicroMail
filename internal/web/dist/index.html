@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/micromail-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MicroMail</title>
+    <script>
+      // Defensive guard: Ensure navigator.mediaDevices is present even in non-secure HTTP contexts
+      // so third-party browser extensions or host injected scripts (e.g. inject.js) do not crash
+      if (typeof window !== 'undefined' && !navigator.mediaDevices) {
+        try {
+          navigator.mediaDevices = {
+            enumerateDevices: () => Promise.resolve([]),
+            getUserMedia: () => Promise.reject(
+                new DOMException('MediaDevices unavailable in insecure context', 'NotSupportedError')
+              ),
+            addEventListener: () => {},
+            removeEventListener: () => {},
+            dispatchEvent: () => false,
+          };
+        } catch (_) {}
+      }
+      // Suppress unhandled third-party injected script exceptions from freezing the page
+      window.addEventListener('error', (event) => {
+        if (
+          event.filename &&
+          (event.filename.includes('inject.js') ||
+            event.filename.includes('chrome-extension://') ||
+            event.filename.includes('moz-extension://'))
+        ) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          console.warn('[MicroMail] Prevented external script crash:', event.message);
+        }
+      });
+    </script>
+    <script type="module" crossorigin src="/assets/index-vtcM0wXU.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-vKsPcKpy.css">
+  </head>
+  <body class="h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased overflow-hidden">
+    <div id="root" class="h-full"></div>
+  </body>
+</html>

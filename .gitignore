@@ -1,0 +1,73 @@
+# ========================================================
+# MicroMail: Production & Development .gitignore
+# ========================================================
+
+# Compiled Binaries & Executables
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+micromail
+*.test
+*.out
+target/
+**/target/
+bin/
+
+# Local Runtime Data, Mail Storage & SQLite Databases
+data/
+/data/
+dev_data/
+mail-data/
+test_data/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3
+
+# Certificates, Keys & Secrets
+certs/
+*.pem
+*.key
+*.crt
+*.pfx
+.env
+.env.local
+.env.*.local
+setup_token
+
+# Node.js & Web Frontend Dependencies
+node_modules/
+**/node_modules/
+.npm/
+.pnpm-store/
+.vite/
+**/.vite-temp/
+web/dist/
+
+# Logs & Temporary Files
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDE & Editor Configurations
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

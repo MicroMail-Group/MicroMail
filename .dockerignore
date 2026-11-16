@@ -1,0 +1,11 @@
+.git
+.github
+web/node_modules
+web/dist
+target
+**/target
+data
+/data
+*.db
+*.pem
+*.log
