@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MicroMail — A tiny footprint for big conversations.</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes antManCore {
+      0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.45));
+      }
+      22% {
+        transform: scale(0.18);
+        filter: drop-shadow(0 0 45px rgba(255, 255, 255, 0.95));
+      }
+      38% {
+        transform: scale(0.18);
+        filter: drop-shadow(0 0 40px rgba(255, 255, 255, 0.9));
+      }
+      55% {
+        transform: scale(1.15);
+        filter: drop-shadow(0 0 50px rgba(255, 255, 255, 0.85));
+      }
+      72% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.45));
+      }
+    }
+
+    @keyframes shedWhiteShrink {
+      0%, 15% {
+        opacity: 0;
+        transform: scale(1);
+        border-color: rgba(255, 255, 255, 0.9);
+      }
+      20% {
+        opacity: 0.95;
+      }
+      36% {
+        opacity: 0;
+        transform: scale(0.12);
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+      37%, 100% {
+        opacity: 0;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes shedWhiteShrink2 {
+      0%, 17% {
+        opacity: 0;
+        transform: scale(1.08);
+      }
+      23% {
+        opacity: 0.8;
+      }
+      40% {
+        opacity: 0;
+        transform: scale(0.08);
+      }
+      41%, 100% {
+        opacity: 0;
+        transform: scale(1.08);
+      }
+    }
+
+    @keyframes shedWhiteGrow {
+      0%, 46% {
+        opacity: 0;
+        transform: scale(0.2);
+        border-color: rgba(255, 255, 255, 0.95);
+      }
+      52% {
+        opacity: 0.9;
+      }
+      68% {
+        opacity: 0;
+        transform: scale(1.75);
+        border-color: rgba(255, 255, 255, 0.05);
+      }
+      69%, 100% {
+        opacity: 0;
+        transform: scale(0.2);
+      }
+    }
+
+    @keyframes shedWhiteGrow2 {
+      0%, 49% {
+        opacity: 0;
+        transform: scale(0.25);
+      }
+      56% {
+        opacity: 0.8;
+      }
+      72% {
+        opacity: 0;
+        transform: scale(1.95);
+      }
+      73%, 100% {
+        opacity: 0;
+        transform: scale(0.25);
+      }
+    }
+
+    .animate-ant-man-core {
+      animation: antManCore 4.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    .animate-shed-white-shrink {
+      animation: shedWhiteShrink 4.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    .animate-shed-white-shrink-2 {
+      animation: shedWhiteShrink2 4.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    .animate-shed-white-grow {
+      animation: shedWhiteGrow 4.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    .animate-shed-white-grow-2 {
+      animation: shedWhiteGrow2 4.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center p-6 sm:p-10 relative overflow-hidden select-none font-sans">
+
+  <!-- Subtle Radial Glow in Background -->
+  <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(255,255,255,0.08),rgba(255,255,255,0))] pointer-events-none"></div>
+
+  <!-- Top Bar: Brand tag -->
+  <header class="w-full max-w-5xl flex items-center justify-between absolute top-6 px-6 sm:top-10 sm:px-10 z-10">
+    <div class="flex items-center gap-2.5">
+      <img src="micromail-icon.png" alt="MicroMail" class="w-8 h-8 rounded-xl border border-slate-800 object-cover shadow-md" />
+      <span class="font-bold text-sm tracking-tight text-white">MicroMail</span>
+    </div>
+
+    <a href="https://github.com/MicroMail-Group" target="_blank" rel="noopener noreferrer" class="text-xs font-semibold text-slate-400 hover:text-white transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 hover:border-slate-700">
+      <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+      </svg>
+      <span>GitHub</span>
+    </a>
+  </header>
+
+  <!-- Center: Hero Graphic, Title, Tagline & CTA -->
+  <main class="max-w-xl w-full mx-auto flex flex-col items-center text-center space-y-6 my-auto py-8 relative z-10">
+    
+    <!-- Ant-Man Quantum Email Graphic (Pure White) -->
+    <div class="relative w-72 h-72 sm:w-80 sm:h-80 flex items-center justify-center select-none" aria-label="MicroMail Quantum Graphic">
+      <!-- Deep Ambient White Glow -->
+      <div class="absolute w-56 h-56 rounded-full bg-white/[0.06] blur-3xl pointer-events-none"></div>
+
+      <!-- Shedding Ring 1: Primary White (Shrink phase) -->
+      <div class="absolute w-36 h-28 sm:w-44 sm:h-32 rounded-3xl border-2 border-white animate-shed-white-shrink pointer-events-none"></div>
+
+      <!-- Shedding Ring 2: Secondary White (Shrink phase) -->
+      <div class="absolute w-36 h-28 sm:w-44 sm:h-32 rounded-3xl border border-white/70 animate-shed-white-shrink-2 pointer-events-none"></div>
+
+      <!-- Shedding Ring 3: Primary White (Grow phase) -->
+      <div class="absolute w-36 h-28 sm:w-44 sm:h-32 rounded-3xl border-2 border-white animate-shed-white-grow pointer-events-none"></div>
+
+      <!-- Shedding Ring 4: Secondary White (Grow phase) -->
+      <div class="absolute w-36 h-28 sm:w-44 sm:h-32 rounded-3xl border border-white/70 animate-shed-white-grow-2 pointer-events-none"></div>
+
+      <!-- Floating Quantum Spark Particles -->
+      <div class="absolute -top-2 left-12 w-2 h-2 rounded-full bg-white blur-[0.5px] shadow-[0_0_8px_#ffffff] animate-pulse"></div>
+      <div class="absolute -bottom-3 right-12 w-1.5 h-1.5 rounded-full bg-white blur-[0.5px] shadow-[0_0_8px_#ffffff] animate-pulse"></div>
+      <div class="absolute top-1/2 -left-3 w-1.5 h-1.5 rounded-full bg-white blur-[0.5px] shadow-[0_0_6px_#ffffff] animate-pulse"></div>
+      <div class="absolute top-8 -right-2 w-2 h-2 rounded-full bg-white blur-[0.5px] shadow-[0_0_8px_#ffffff] animate-pulse"></div>
+
+      <!-- Central Core Email Graphic (Ant-Man Shrink & Grow) -->
+      <div class="animate-ant-man-core relative z-10 flex items-center justify-center cursor-default">
+        <!-- Crisp White Envelope Outer Border -->
+        <div class="relative w-36 h-28 sm:w-44 sm:h-32 rounded-3xl p-[2px] bg-white/90 shadow-[0_0_30px_rgba(255,255,255,0.4)]">
+          <!-- Inner High-Tech Email Envelope -->
+          <div class="w-full h-full rounded-[22px] bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 flex flex-col items-center justify-center relative overflow-hidden border border-white/20 shadow-inner">
+            <!-- Specular Light Sweep -->
+            <div class="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-white/80 to-transparent"></div>
+
+            <!-- Glowing Envelope SVG Geometry -->
+            <svg viewBox="0 0 160 120" class="w-full h-full p-2.5 drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <filter id="whiteNeon" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="2.5" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+
+              <!-- Envelope Body Outline -->
+              <rect x="12" y="18" width="136" height="84" rx="14" stroke="rgba(255, 255, 255, 0.45)" stroke-width="2" fill="rgba(15, 23, 42, 0.9)" />
+
+              <!-- Bottom Triangular Fold Lines -->
+              <path d="M14 98L62 58M146 98L98 58" stroke="rgba(255, 255, 255, 0.3)" stroke-width="1.5" stroke-linecap="round" />
+
+              <!-- Top Flap Path (V-shape) in Crisp White -->
+              <path d="M14 24L80 72L146 24" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#whiteNeon)" />
+
+              <!-- Central Glowing Seal in Crisp White -->
+              <circle cx="80" cy="70" r="11" fill="#09090b" stroke="#ffffff" stroke-width="2" filter="url(#whiteNeon)" />
+
+              <!-- Micro Glowing Dot in Center -->
+              <circle cx="80" cy="70" r="3.5" fill="#ffffff" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MicroMail Title -->
+    <div class="space-y-3">
+      <h1 class="text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tight flex items-center justify-center">
+        MicroMail
+      </h1>
+
+      <!-- Tagline -->
+      <p class="text-base sm:text-lg text-slate-300 font-medium tracking-wide max-w-md mx-auto">
+        "A tiny footprint for big conversations."
+      </p>
+    </div>
+
+    <!-- Call to Action Buttons -->
+    <div class="pt-4 flex flex-col sm:flex-row items-center gap-3.5 w-full sm:w-auto">
+      <a href="https://github.com/MicroMail-Group/MicroMail" class="w-full sm:w-auto px-8 py-3.5 text-sm sm:text-base font-bold text-slate-950 bg-white hover:bg-slate-100 rounded-2xl flex items-center justify-center gap-2.5 shadow-2xl transition-all cursor-pointer group">
+        <span>Get Started</span>
+        <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+        </svg>
+      </a>
+
+      <a href="https://hub.docker.com/r/grimmdev/micromail" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto px-6 py-3.5 text-sm sm:text-base font-semibold text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 rounded-2xl flex items-center justify-center gap-2 transition-all">
+        <span>Docker Image</span>
+      </a>
+    </div>
+  </main>
+
+</body>
+</html>
