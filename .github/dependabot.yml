@@ -1,28 +1,40 @@
 version: 2
 updates:
-  # Maintain Go modules in service root
+  # Maintain Go modules in service root (grouped into a single PR)
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 3
     commit-message:
       prefix: "chore(deps)"
+    groups:
+      go-dependencies:
+        patterns:
+          - "*"
 
-  # Maintain npm dependencies in service/web
+  # Maintain npm dependencies in service/web (grouped into a single PR)
   - package-ecosystem: "npm"
     directory: "/web"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 3
     commit-message:
       prefix: "chore(deps)"
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
 
-  # Maintain GitHub Actions workflow dependencies
+  # Maintain GitHub Actions workflow dependencies (grouped into a single PR)
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 3
     commit-message:
       prefix: "chore(ci)"
+    groups:
+      actions:
+        patterns:
+          - "*"

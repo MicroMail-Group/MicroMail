@@ -17,6 +17,7 @@ jobs:
   analyze:
     name: CodeQL Analysis (${{ matrix.language }})
     runs-on: ubuntu-latest
+    if: github.actor != 'dependabot[bot]'
     permissions:
       actions: read
       contents: read
