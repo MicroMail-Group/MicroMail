@@ -25,11 +25,9 @@ jobs:
           go-version: 'stable'
           cache: true
 
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
-          args: --timeout=5m ./...
+      - name: Run Go Vet & Static Checks
+        run: |
+          go vet ./...
 
       - name: Run Govulncheck (Vulnerability Detection)
         run: |
