@@ -1,6 +1,6 @@
 <div align="center">
   <h1>MicroMail</h1>
-  <img src="assets/micromail-banner-max.jpg" height="512" />
+  <img src="assets/micromail-multichromatic-gradient.png" height="256" />
 </div>
 
 A single-container, zero-sidecar email server, webmail client, and WebAssembly (WASM) addon hub built with pure Go 1.24+ and React 19.
