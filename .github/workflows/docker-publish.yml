@@ -173,6 +173,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
 
     steps:
       - name: Checkout repository
@@ -195,14 +197,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Log in to Docker Hub (if DOCKERHUB_USERNAME & DOCKERHUB_TOKEN secrets are set)
-      - name: Log in to Docker Hub
-        if: github.event_name != 'pull_request' && secrets.DOCKERHUB_USERNAME != ''
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       # Determine target images & metadata tags
       - name: Extract Docker metadata (tags, labels)
         id: meta
@@ -210,7 +204,7 @@ jobs:
         with:
           images: |
             ghcr.io/${{ github.repository }}
-            ${{ secrets.DOCKERHUB_USERNAME != '' && format('{0}/micromail', secrets.DOCKERHUB_USERNAME) || '' }}
+            ${{ env.DOCKERHUB_USERNAME != '' && format('{0}/micromail', env.DOCKERHUB_USERNAME) || '' }}
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event.inputs.branch == 'main' || github.event.inputs.branch == 'master' }}
             type=raw,value=${{ github.event.inputs.version }},enable=${{ github.event.inputs.version != '' }}
@@ -219,6 +213,14 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=sha,format=short
+
+      # Log in to Docker Hub (if DOCKERHUB_USERNAME & DOCKERHUB_TOKEN secrets are set)
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request' && env.DOCKERHUB_USERNAME != ''
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # Build and push multi-arch image (linux/amd64 & linux/arm64)
       - name: Build and push multi-arch Docker image
