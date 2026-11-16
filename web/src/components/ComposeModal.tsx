@@ -188,55 +188,75 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({ isOpen, onClose, onS
   });
   const [signatureText, setSignatureText] = useState(() => {
     return (
-      localStorage.getItem('micromail_user_signature') ||
       user?.signature ||
+      localStorage.getItem('micromail_user_signature') ||
       '--\nBest regards,\nMicroMail User'
     );
   });
 
   useEffect(() => {
-    if (user?.signature && !localStorage.getItem('micromail_user_signature')) {
+    if (user?.signature !== undefined) {
       setSignatureText(user.signature);
+    } else {
+      const stored = localStorage.getItem('micromail_user_signature');
+      if (stored) setSignatureText(stored);
     }
   }, [user?.signature]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    if (replyTo) {
-      if (replyTo.mode === 'forward') {
-        setTo('');
-        setCc('');
-        const baseSubj = replyTo.subject || '(No subject)';
-        setSubject(
-          baseSubj.toLowerCase().startsWith('fwd:') || baseSubj.toLowerCase().startsWith('fw:')
-            ? baseSubj
-            : `Fwd: ${baseSubj}`
-        );
-        const dateStr = replyTo.created_at
-          ? new Date(replyTo.created_at * 1000).toLocaleString()
-          : new Date().toLocaleString();
-        const fwdHeader = `\n\n---------- Forwarded message ---------\nFrom: ${replyTo.sender}\nDate: ${dateStr}\nSubject: ${baseSubj}\nTo: ${(replyTo.recipients || []).join(', ')}\n\n${replyTo.body_text || ''}`;
-        setBodyText(fwdHeader);
-      } else {
-        // reply mode: each email in the conversation thread is its own discrete level,
-        // so we start with a clean message body without repeating past thread history.
-        setTo(replyTo.sender);
-        setCc('');
-        const baseSubj = replyTo.subject || '(No subject)';
-        setSubject(baseSubj.toLowerCase().startsWith('re:') ? baseSubj : `Re: ${baseSubj}`);
-        setBodyText('');
-      }
-    } else {
-      setTo('');
-      setCc('');
-      setSubject('');
-      setBodyText('');
-      setAttachments([]);
-    }
+  const resetForm = useCallback(() => {
+    setTo('');
+    setCc('');
+    setShowCc(false);
+    setSubject('');
+    setBodyText('');
+    setAttachments([]);
     setShowEmojiPicker(false);
-  }, [replyTo]);
+    setShowTemplatePicker(false);
+  }, []);
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      if (replyTo) {
+        if (replyTo.mode === 'forward') {
+          setTo('');
+          setCc('');
+          setShowCc(false);
+          const baseSubj = replyTo.subject || '(No subject)';
+          setSubject(
+            baseSubj.toLowerCase().startsWith('fwd:') || baseSubj.toLowerCase().startsWith('fw:')
+              ? baseSubj
+              : `Fwd: ${baseSubj}`
+          );
+          const dateStr = replyTo.created_at
+            ? new Date(replyTo.created_at * 1000).toLocaleString()
+            : new Date().toLocaleString();
+          const fwdHeader = `\n\n---------- Forwarded message ---------\nFrom: ${replyTo.sender}\nDate: ${dateStr}\nSubject: ${baseSubj}\nTo: ${(replyTo.recipients || []).join(', ')}\n\n${replyTo.body_text || ''}`;
+          setBodyText(fwdHeader);
+        } else {
+          // reply mode: each email in the conversation thread is its own discrete level,
+          // so we start with a clean message body without repeating past thread history.
+          setTo(replyTo.sender);
+          setCc('');
+          setShowCc(false);
+          const baseSubj = replyTo.subject || '(No subject)';
+          setSubject(baseSubj.toLowerCase().startsWith('re:') ? baseSubj : `Re: ${baseSubj}`);
+          setBodyText('');
+        }
+      } else {
+        resetForm();
+      }
+      setShowEmojiPicker(false);
+      setShowTemplatePicker(false);
+    }
+  }, [isOpen, replyTo, resetForm]);
 
   // Addon SDK insertion hook
   useEffect(() => {
@@ -444,6 +464,7 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({ isOpen, onClose, onS
         in_reply_to: replyTo?.message_id_header || replyTo?.id,
         thread_id: replyTo?.thread_id,
       });
+      resetForm();
       onClose();
     } catch (err) {
       console.error('Failed to send:', err);
@@ -465,7 +486,7 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({ isOpen, onClose, onS
                 : 'New Message'}
           </h3>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95"
             title="Close"
           >

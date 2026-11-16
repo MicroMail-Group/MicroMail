@@ -12,9 +12,7 @@ import {
   RotateCcw,
   Server,
   ShieldAlert,
-  Sparkles,
   User,
-  Zap,
 } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useState } from 'react';

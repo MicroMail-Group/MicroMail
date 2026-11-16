@@ -439,6 +439,15 @@ func (a *AuthManager) MeHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
+
+	// Always refresh latest user profile (display name, signature, admin state) from store
+	if dbUser, err := a.store.GetUserByID(user.ID); err == nil && dbUser != nil {
+		user.DisplayName = dbUser.DisplayName
+		user.Signature = dbUser.Signature
+		user.IsAdmin = dbUser.IsAdmin
+		user.TOTPEnabled = dbUser.TOTPEnabled
+	}
+
 	writeJSON(w, http.StatusOK, user)
 }
 

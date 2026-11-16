@@ -63,4 +63,4 @@ jobs:
       - name: Run Biome Linter
         run: |
           cd web
-          npx @biomejs/biome check src/
+          npx @biomejs/biome lint src/

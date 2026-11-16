@@ -195,6 +195,13 @@ func (h *SetupHandlers) InitializeSetup(w http.ResponseWriter, r *http.Request) 
 	_ = h.store.SetUserAdmin(user.ID, true)
 	user.IsAdmin = true
 
+	// Clean up any unconfigured default admin@localhost created prior to setup
+	if strings.ToLower(req.AdminEmail) != "admin@localhost" {
+		if legacyAdmin, err := h.store.GetUserByEmail("admin@localhost"); err == nil && legacyAdmin != nil {
+			_ = h.store.DeleteUser(legacyAdmin.ID)
+		}
+	}
+
 	// Ensure dedicated postmaster mailbox exists when MailDomain is configured
 	if req.MailDomain != "" && req.MailDomain != "localhost" {
 		postmasterEmail := "postmaster@" + req.MailDomain

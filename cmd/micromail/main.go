@@ -36,14 +36,18 @@ func main() {
 	defer st.Close()
 	log.Println("[Store] SQLite database initialized in WAL mode")
 
-	// 3. Ensure default admin user
-	adminUser, err := st.EnsureUser(cfg.AdminEmail, cfg.AdminPassword, "Administrator")
-	if err != nil {
-		log.Printf("[Store] Error ensuring admin user: %v", err)
+	// 3. Ensure admin user (only if setup was already completed or custom non-localhost admin configured)
+	if cfg.IsSetupCompleted || (cfg.AdminEmail != "" && cfg.AdminEmail != "admin@localhost") {
+		adminUser, err := st.EnsureUser(cfg.AdminEmail, cfg.AdminPassword, "Administrator")
+		if err != nil {
+			log.Printf("[Store] Error ensuring admin user: %v", err)
+		} else {
+			_ = st.SetUserAdmin(adminUser.ID, true)
+			adminUser.IsAdmin = true
+			log.Printf("[Store] Admin user ready: %s (ID: %s)", adminUser.Email, adminUser.ID)
+		}
 	} else {
-		_ = st.SetUserAdmin(adminUser.ID, true)
-		adminUser.IsAdmin = true
-		log.Printf("[Store] Admin user ready: %s (ID: %s)", adminUser.Email, adminUser.ID)
+		log.Println("[Store] First-time setup pending; waiting for administrator account configuration in wizard")
 	}
 
 	// 3b. Ensure dedicated postmaster account exists when MailDomain is configured
