@@ -1,4 +1,5 @@
 <center>
+  <p font-weight="bold"><bold>MicroMail</bold></p>
   <img src="assets/micromail-multichromatic-gradient.png" height="128" />
   <p><bold>MicroMail</bold></p>
 </center>
