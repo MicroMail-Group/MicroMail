@@ -585,6 +585,9 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({ isOpen, onClose, onS
                 <span>Emoji</span>
               </button>
 
+              {/* Slot next to Emoji for Addons (e.g. Voice to Compose) */}
+              <SlotRenderer slot="compose_actions" />
+
               {/* Templates Dropdown Button */}
               <button
                 type="button"
