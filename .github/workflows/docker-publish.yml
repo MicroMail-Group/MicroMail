@@ -172,6 +172,7 @@ jobs:
     name: Build & Push Docker Image (GHCR & Docker Hub)
     needs: test
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: read
       packages: write
