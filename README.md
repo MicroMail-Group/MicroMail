@@ -1,4 +1,6 @@
-<img src="assets/micromail-multichromatic-gradient.png" />
+<center>
+  <img src="assets/micromail-multichromatic-gradient.png" height="128" />
+</center>
 
 # MicroMail
 
