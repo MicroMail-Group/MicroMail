@@ -1,15 +1,29 @@
-name: Build & Push Docker Image
+name: Release (Binaries, Docker & GHCR)
 
 on:
   push:
     branches:
       - main
+      - master
     tags:
       - 'v*.*.*'
+      - 'v*'
   pull_request:
     branches:
       - main
+      - master
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version tag (e.g. v1.0.0 or 1.0.0)'
+        required: false
+        default: ''
+        type: string
+      branch:
+        description: 'Branch or Git ref to build from'
+        required: false
+        default: 'main'
+        type: string
 
 jobs:
   test:
@@ -18,6 +32,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -41,8 +57,117 @@ jobs:
       - name: Run Go Unit & Integration Tests
         run: go test -v ./...
 
-  build-and-push:
-    name: Build & Push Docker Image
+  build-binaries:
+    name: Build & Release Static Binaries
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            artifact_name: micromail-linux-amd64
+          - goos: linux
+            goarch: arm64
+            artifact_name: micromail-linux-arm64
+          - goos: windows
+            goarch: amd64
+            artifact_name: micromail-windows-amd64.exe
+          - goos: darwin
+            goarch: amd64
+            artifact_name: micromail-darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            artifact_name: micromail-darwin-arm64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+          cache: true
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build Frontend (Embedded SPA)
+        run: |
+          cd web
+          npm ci
+          npm run build
+
+      - name: Compile Static Go Binary (${{ matrix.goos }}/${{ matrix.goarch }})
+        env:
+          CGO_ENABLED: 0
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          go build -ldflags="-s -w" -o dist/${{ matrix.artifact_name }} ./cmd/micromail
+
+      - name: Upload Binary Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: dist/${{ matrix.artifact_name }}
+          if-no-files-found: error
+
+  publish-github-release:
+    name: Publish GitHub Release
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+
+      - name: Download all built binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: dist-release
+          merge-multiple: true
+
+      - name: Determine Release Tag
+        id: release_tag
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            TAG="${{ github.event.inputs.version }}"
+            [[ $TAG != v* ]] && TAG="v$TAG"
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=v0.0.0-${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_tag.outputs.tag }}
+          name: "MicroMail ${{ steps.release_tag.outputs.tag }}"
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            dist-release/*
+
+  build-and-push-docker:
+    name: Build & Push Docker Image (GHCR & Docker Hub)
     needs: test
     runs-on: ubuntu-latest
     permissions:
@@ -52,6 +177,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -59,7 +186,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 1. Log in to GitHub Container Registry (GHCR)
+      # Log in to GitHub Container Registry (GHCR)
       - name: Log in to GitHub Container Registry (GHCR)
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
@@ -68,7 +195,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 2. Log in to Docker Hub (if secrets DOCKERHUB_USERNAME & DOCKERHUB_TOKEN are set)
+      # Log in to Docker Hub (if DOCKERHUB_USERNAME & DOCKERHUB_TOKEN secrets are set)
       - name: Log in to Docker Hub
         if: github.event_name != 'pull_request' && secrets.DOCKERHUB_USERNAME != ''
         uses: docker/login-action@v3
@@ -76,7 +203,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 3. Determine target images (GHCR and optionally Docker Hub)
+      # Determine target images & metadata tags
       - name: Extract Docker metadata (tags, labels)
         id: meta
         uses: docker/metadata-action@v5
@@ -85,13 +212,15 @@ jobs:
             ghcr.io/${{ github.repository }}
             ${{ secrets.DOCKERHUB_USERNAME != '' && format('{0}/micromail', secrets.DOCKERHUB_USERNAME) || '' }}
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event.inputs.branch == 'main' || github.event.inputs.branch == 'master' }}
+            type=raw,value=${{ github.event.inputs.version }},enable=${{ github.event.inputs.version != '' }}
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
             type=sha,format=short
 
-      # 4. Build and push multi-arch image (linux/amd64 & linux/arm64)
+      # Build and push multi-arch image (linux/amd64 & linux/arm64)
       - name: Build and push multi-arch Docker image
         uses: docker/build-push-action@v6
         with:
