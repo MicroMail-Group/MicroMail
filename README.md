@@ -1,4 +1,6 @@
-# MicroMail ✉️
+<img src="assets/micromail-multichromatic-gradient.png" />
+
+# MicroMail
 
 A single-container, zero-sidecar email server, webmail client, and WebAssembly (WASM) addon hub built with pure Go 1.24+ and React 19.
 
