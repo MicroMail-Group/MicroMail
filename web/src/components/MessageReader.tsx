@@ -225,7 +225,7 @@ export const MessageReader: React.FC<MessageReaderProps> = ({
   return (
     <div
       key={latest.thread_id || latest.id}
-      className="flex-1 flex flex-col h-full bg-white dark:bg-slate-900 overflow-hidden relative animate-view-fade"
+      className="flex-1 flex flex-col h-full bg-white dark:bg-slate-900 overflow-hidden relative animate-view-fade select-text"
     >
       {/* Thread Title & Actions Topbar */}
       <div className="p-3 md:p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 md:gap-4">
@@ -730,7 +730,7 @@ export const MessageReader: React.FC<MessageReaderProps> = ({
                             {viewMode === 'html' ? (
                               <div>
                                 <div
-                                  className="prose prose-sm dark:prose-invert max-w-none break-words overflow-x-auto"
+                                  className="prose prose-sm dark:prose-invert max-w-none break-words overflow-x-auto select-text"
                                   dangerouslySetInnerHTML={{
                                     __html:
                                       isQuotedShown && cleanedHtml.quoted
@@ -760,7 +760,7 @@ export const MessageReader: React.FC<MessageReaderProps> = ({
                               </div>
                             ) : (
                               <div>
-                                <pre className="whitespace-pre-wrap font-sans text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
+                                <pre className="whitespace-pre-wrap font-sans text-sm text-slate-800 dark:text-slate-200 leading-relaxed select-text">
                                   {isQuotedShown && cleanedText.quoted
                                     ? msg.body_text
                                     : cleanedText.clean || '(No text content)'}
@@ -789,7 +789,7 @@ export const MessageReader: React.FC<MessageReaderProps> = ({
                           </div>
                         ) : (
                           <div>
-                            <pre className="whitespace-pre-wrap font-sans text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
+                            <pre className="whitespace-pre-wrap font-sans text-sm text-slate-800 dark:text-slate-200 leading-relaxed select-text">
                               {isQuotedShown && cleanedText.quoted
                                 ? msg.body_text
                                 : cleanedText.clean || '(Empty message)'}

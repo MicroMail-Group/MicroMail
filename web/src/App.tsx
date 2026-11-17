@@ -467,7 +467,7 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-full w-full bg-slate-100 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 antialiased overflow-hidden select-none relative">
+    <div className="flex h-full w-full bg-slate-100 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 antialiased overflow-hidden relative">
       {/* 1. Left Navigation Sidebar (Collapsible with Icon Badges & Icon Compose) */}
       <Sidebar
         currentFolder={currentFolder}
