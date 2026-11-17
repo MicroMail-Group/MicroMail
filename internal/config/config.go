@@ -50,7 +50,7 @@ func LoadConfig() (*Config, error) {
 		IMAPAddr:           getEnv("IMAP_ADDR", ":993"),
 		TLSCertFile:        getEnv("TLS_CERT", ""),
 		TLSKeyFile:         getEnv("TLS_KEY", ""),
-		AddonRegistryURL:   getEnv("ADDON_REGISTRY_URL", "https://cdn.jsdelivr.net/gh/MicroMail-Group/Registry@master/registry.json"),
+		AddonRegistryURL:   getEnv("ADDON_REGISTRY_URL", "https://raw.githubusercontent.com/MicroMail-Group/Registry/master/registry.json"),
 		DKIMSelector:       getEnv("DKIM_SELECTOR", "default"),
 		AdminEmail:         getEnv("ADMIN_EMAIL", "admin@localhost"),
 		AdminPassword:      getEnv("ADMIN_PASSWORD", "admin123"),
