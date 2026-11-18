@@ -22,7 +22,7 @@ on:
       branch:
         description: 'Branch or Git ref to build from'
         required: false
-        default: 'main'
+        default: 'master'
         type: string
 
 jobs:
