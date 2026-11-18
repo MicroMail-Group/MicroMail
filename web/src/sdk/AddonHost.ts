@@ -104,12 +104,13 @@ class AddonHostManager {
   }
 
   public async loadSingleAddon(addon: any): Promise<void> {
-    const entryUrl = `/addons/${addon.id}/${addon.manifest.frontend.entry}`;
+    const versionTag = addon.version || addon.manifest?.version || Date.now();
+    const entryUrl = `/addons/${addon.id}/${addon.manifest.frontend.entry}?v=${versionTag}`;
     try {
       const sdk: MicroMailSDK = {
         addonId: addon.id,
         config: addon.config || {},
-        assetUrl: (relPath: string) => `/addons/${addon.id}/ui/${relPath.replace(/^\/+/, '')}`,
+        assetUrl: (relPath: string) => `/addons/${addon.id}/ui/${relPath.replace(/^\/+/, '')}?v=${versionTag}`,
         registerSlot: (slotName: string, definition: any) => {
           this.registerSlot(addon.id, slotName, definition);
         },

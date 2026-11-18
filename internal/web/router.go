@@ -197,6 +197,9 @@ func (s *Server) serveAddonAsset(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/wasm")
 	} else if strings.HasSuffix(cleanRel, ".js") {
 		w.Header().Set("Content-Type", "application/javascript")
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		w.Header().Set("Pragma", "no-cache")
+		w.Header().Set("Expires", "0")
 	}
 
 	http.ServeFile(w, r, absPath)
