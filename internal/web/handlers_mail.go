@@ -3,7 +3,10 @@ package web
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -95,6 +98,14 @@ func (h *MailHandlers) GetThreadMessages(w http.ResponseWriter, r *http.Request)
 	_ = h.store.UpdateUserThreadRead(user.ID, threadID, true)
 	for _, m := range messages {
 		m.IsRead = true
+		// Automatically resolve inline cid: images if present
+		if strings.Contains(m.BodyHTML, "cid:") {
+			if newHTML, newAtts, changed := mail.ResolveMessageInlineImages(h.cfg.DataDir, m.BodyHTML, toMailAttachments(m.Attachments), m.RawBlobPath); changed {
+				m.BodyHTML = newHTML
+				m.Attachments = toStoreAttachments(newAtts)
+				_ = h.store.UpdateMessageBodyAndAttachments(m.ID, m.BodyHTML, m.Attachments)
+			}
+		}
 	}
 
 	writeJSON(w, http.StatusOK, messages)
@@ -112,6 +123,15 @@ func (h *MailHandlers) GetMessage(w http.ResponseWriter, r *http.Request) {
 	if err != nil || msg == nil || msg.UserID != user.ID {
 		http.Error(w, "Message not found", http.StatusNotFound)
 		return
+	}
+
+	// Automatically resolve inline cid: images if present
+	if strings.Contains(msg.BodyHTML, "cid:") {
+		if newHTML, newAtts, changed := mail.ResolveMessageInlineImages(h.cfg.DataDir, msg.BodyHTML, toMailAttachments(msg.Attachments), msg.RawBlobPath); changed {
+			msg.BodyHTML = newHTML
+			msg.Attachments = toStoreAttachments(newAtts)
+			_ = h.store.UpdateMessageBodyAndAttachments(msg.ID, msg.BodyHTML, msg.Attachments)
+		}
 	}
 
 	writeJSON(w, http.StatusOK, msg)
@@ -375,4 +395,133 @@ func (h *MailHandlers) GetDKIMInfo(w http.ResponseWriter, r *http.Request) {
 		"public_key": h.dkimMgr.PublicKeyB64,
 	}
 	writeJSON(w, http.StatusOK, info)
+}
+
+func (h *MailHandlers) ProxyImage(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	rawURL := strings.TrimSpace(r.URL.Query().Get("url"))
+	if rawURL == "" {
+		http.Error(w, "Missing url parameter", http.StatusBadRequest)
+		return
+	}
+
+	parsed, err := url.Parse(rawURL)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+		http.Error(w, "Invalid target URL", http.StatusBadRequest)
+		return
+	}
+
+	hostname := parsed.Hostname()
+	if isPrivateOrLoopbackHost(hostname) {
+		http.Error(w, "Forbidden host", http.StatusForbidden)
+		return
+	}
+
+	client := &http.Client{
+		Timeout: 12 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= 5 {
+				return fmt.Errorf("stopped after 5 redirects")
+			}
+			if isPrivateOrLoopbackHost(req.URL.Hostname()) {
+				return fmt.Errorf("redirect to private address blocked")
+			}
+			return nil
+		},
+	}
+
+	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, rawURL, nil)
+	if err != nil {
+		http.Error(w, "Failed to create request", http.StatusInternalServerError)
+		return
+	}
+
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 MicroMail/1.0")
+	req.Header.Set("Accept", "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		http.Error(w, "Failed to fetch image: "+err.Error(), http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		http.Error(w, fmt.Sprintf("Upstream returned %d", resp.StatusCode), http.StatusBadGateway)
+		return
+	}
+
+	limitReader := io.LimitReader(resp.Body, 15*1024*1024)
+	bodyBytes, err := io.ReadAll(limitReader)
+	if err != nil {
+		http.Error(w, "Failed to read image body", http.StatusInternalServerError)
+		return
+	}
+
+	contentType := resp.Header.Get("Content-Type")
+	if !strings.HasPrefix(strings.ToLower(contentType), "image/") {
+		detected := http.DetectContentType(bodyBytes)
+		if strings.HasPrefix(detected, "image/") {
+			contentType = detected
+		} else {
+			contentType = "image/png"
+		}
+	}
+
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Cache-Control", "public, max-age=604800, immutable")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(bodyBytes)
+}
+
+func isPrivateOrLoopbackHost(host string) bool {
+	host = strings.ToLower(strings.TrimSpace(host))
+	if host == "localhost" || strings.HasSuffix(host, ".localhost") || strings.HasSuffix(host, ".local") {
+		return true
+	}
+
+	ips, err := net.LookupIP(host)
+	if err != nil {
+		return true
+	}
+
+	for _, ip := range ips {
+		if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified() {
+			return true
+		}
+	}
+	return false
+}
+
+func toMailAttachments(atts []store.AttachmentMeta) []mail.AttachmentMeta {
+	res := make([]mail.AttachmentMeta, len(atts))
+	for i, a := range atts {
+		res[i] = mail.AttachmentMeta{
+			Filename:    a.Filename,
+			ContentType: a.ContentType,
+			Size:        a.Size,
+			Path:        a.Path,
+			ContentID:   a.ContentID,
+		}
+	}
+	return res
+}
+
+func toStoreAttachments(atts []mail.AttachmentMeta) []store.AttachmentMeta {
+	res := make([]store.AttachmentMeta, len(atts))
+	for i, a := range atts {
+		res[i] = store.AttachmentMeta{
+			Filename:    a.Filename,
+			ContentType: a.ContentType,
+			Size:        a.Size,
+			Path:        a.Path,
+			ContentID:   a.ContentID,
+		}
+	}
+	return res
 }

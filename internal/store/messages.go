@@ -29,6 +29,7 @@ type AttachmentMeta struct {
 	ContentType string `json:"content_type"`
 	Size        int64  `json:"size"`
 	Path        string `json:"path"`
+	ContentID   string `json:"content_id,omitempty"`
 }
 
 type Message struct {
@@ -719,6 +720,19 @@ func (s *Store) UpdateUserThreadRead(userID, threadID string, isRead bool) error
 		val = 1
 	}
 	_, err := s.db.Exec(`UPDATE messages SET is_read = ? WHERE thread_id = ? AND user_id = ?`, val, threadID, userID)
+	return err
+}
+
+func (s *Store) UpdateMessageBodyAndAttachments(messageID string, bodyHTML string, attachments []AttachmentMeta) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	attJSON, err := json.Marshal(attachments)
+	if err != nil {
+		attJSON = []byte("[]")
+	}
+
+	_, err = s.db.Exec(`UPDATE messages SET body_html = ?, attachments = ? WHERE id = ?`, bodyHTML, string(attJSON), messageID)
 	return err
 }
 

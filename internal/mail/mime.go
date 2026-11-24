@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/emersion/go-message"
 	"github.com/emersion/go-message/mail"
 	"github.com/google/uuid"
 )
@@ -35,6 +36,7 @@ type AttachmentMeta struct {
 	ContentType string `json:"content_type"`
 	Size        int64  `json:"size"`
 	Path        string `json:"path"`
+	ContentID   string `json:"content_id,omitempty"`
 }
 
 func SaveRawEmailBlob(dataDir string, raw []byte) (string, error) {
@@ -112,6 +114,7 @@ func ParseMIME(raw []byte, dataDir string) (*ParsedEmail, error) {
 	}
 
 	// Parse body parts
+	cidMap := make(map[string]string)
 	for {
 		p, err := mr.NextPart()
 		if err == io.EOF {
@@ -137,13 +140,49 @@ func ParseMIME(raw []byte, dataDir string) (*ParsedEmail, error) {
 				} else {
 					parsed.BodyHTML += "\n" + string(b)
 				}
+			} else if strings.HasPrefix(contentType, "image/") || h.Get("Content-ID") != "" {
+				// Inline image (e.g. USPS barcode, scan, tracking graphic, logo)
+				contentID := strings.Trim(h.Get("Content-ID"), "<>")
+				filename := extractFilenameFromHeader(h.Header, contentID, contentType)
+
+				now := time.Now()
+				relDir := filepath.Join(fmt.Sprintf("%04d", now.Year()), fmt.Sprintf("%02d", int(now.Month())))
+				absDir := filepath.Join(dataDir, "blobs", relDir)
+				_ = os.MkdirAll(absDir, 0755)
+
+				attFile := fmt.Sprintf("%s_%s", uuid.New().String(), filepath.Base(filename))
+				absAttPath := filepath.Join(absDir, attFile)
+
+				if err := os.WriteFile(absAttPath, b, 0644); err == nil {
+					relPath := filepath.ToSlash(filepath.Join(relDir, attFile))
+					parsed.Attachments = append(parsed.Attachments, AttachmentMeta{
+						Filename:    filename,
+						ContentType: contentType,
+						Size:        int64(len(b)),
+						Path:        relPath,
+						ContentID:   contentID,
+					})
+					blobURL := "/api/blobs/" + relPath
+					if contentID != "" {
+						cidMap[contentID] = blobURL
+						cidMap["<"+contentID+">"] = blobURL
+					}
+					if filename != "" {
+						cidMap[filename] = blobURL
+					}
+				}
 			}
 		case *mail.AttachmentHeader:
 			filename, _ := h.Filename()
-			if filename == "" {
-				filename = "attachment.dat"
-			}
 			contentType, _, _ := h.ContentType()
+			contentID := strings.Trim(h.Get("Content-ID"), "<>")
+			if filename == "" {
+				if contentID != "" {
+					filename = contentID
+				} else {
+					filename = "attachment.dat"
+				}
+			}
 
 			now := time.Now()
 			relDir := filepath.Join(fmt.Sprintf("%04d", now.Year()), fmt.Sprintf("%02d", int(now.Month())))
@@ -157,14 +196,26 @@ func ParseMIME(raw []byte, dataDir string) (*ParsedEmail, error) {
 			if err == nil {
 				n, _ := io.Copy(f, p.Body)
 				f.Close()
+				relPath := filepath.ToSlash(filepath.Join(relDir, attFile))
 				parsed.Attachments = append(parsed.Attachments, AttachmentMeta{
 					Filename:    filename,
 					ContentType: contentType,
 					Size:        n,
-					Path:        filepath.Join(relDir, attFile),
+					Path:        relPath,
+					ContentID:   contentID,
 				})
+				if contentID != "" {
+					blobURL := "/api/blobs/" + relPath
+					cidMap[contentID] = blobURL
+					cidMap["<"+contentID+">"] = blobURL
+				}
 			}
 		}
+	}
+
+	// Resolve any cid: inline image references in HTML body
+	for cid, blobURL := range cidMap {
+		parsed.BodyHTML = replaceCID(parsed.BodyHTML, cid, blobURL)
 	}
 
 	// Generate snippet from BodyText or BodyHTML
@@ -260,4 +311,125 @@ func fallbackParseRaw(raw []byte) (*ParsedEmail, error) {
 	}
 
 	return parsed, nil
+}
+
+func extractFilenameFromHeader(header message.Header, contentID, contentType string) string {
+	if _, params, err := header.ContentDisposition(); err == nil && params["filename"] != "" {
+		return filepath.Base(params["filename"])
+	}
+	if _, params, err := header.ContentType(); err == nil && params["name"] != "" {
+		return filepath.Base(params["name"])
+	}
+
+	ext := ".dat"
+	switch strings.ToLower(contentType) {
+	case "image/jpeg", "image/jpg":
+		ext = ".jpg"
+	case "image/png":
+		ext = ".png"
+	case "image/gif":
+		ext = ".gif"
+	case "image/webp":
+		ext = ".webp"
+	case "image/svg+xml":
+		ext = ".svg"
+	case "image/bmp":
+		ext = ".bmp"
+	}
+
+	if contentID != "" {
+		cleanID := strings.Trim(contentID, "<>")
+		safeID := strings.Map(func(r rune) rune {
+			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' || r == '-' || r == '.' {
+				return r
+			}
+			return '_'
+		}, cleanID)
+		if !strings.Contains(safeID, ".") {
+			safeID += ext
+		}
+		return safeID
+	}
+	return "inline_image" + ext
+}
+
+func replaceCID(html, cid, blobURL string) string {
+	if html == "" || cid == "" || blobURL == "" {
+		return html
+	}
+	cleanCID := strings.Trim(cid, "<>")
+	targets := []string{
+		"cid:" + cleanCID,
+		"cid:<" + cleanCID + ">",
+		"cid:" + cid,
+	}
+	for _, target := range targets {
+		html = strings.ReplaceAll(html, `"`+target+`"`, `"`+blobURL+`"`)
+		html = strings.ReplaceAll(html, `'`+target+`'`, `'`+blobURL+`'`)
+		html = strings.ReplaceAll(html, `\"`+target+`\"`, `\"`+blobURL+`\"`)
+		html = strings.ReplaceAll(html, `(`+target+`)`, `(`+blobURL+`)`)
+		html = strings.ReplaceAll(html, `('`+target+`')`, `('`+blobURL+`')`)
+		html = strings.ReplaceAll(html, `("`+target+`")`, `("`+blobURL+`")`)
+		html = strings.ReplaceAll(html, target, blobURL)
+	}
+	return html
+}
+
+func ResolveMessageInlineImages(dataDir string, bodyHTML string, attachments []AttachmentMeta, rawBlobPath string) (string, []AttachmentMeta, bool) {
+	if !strings.Contains(bodyHTML, "cid:") {
+		return bodyHTML, attachments, false
+	}
+
+	cidMap := make(map[string]string)
+	for _, att := range attachments {
+		if att.ContentID != "" && att.Path != "" {
+			url := "/api/blobs/" + filepath.ToSlash(att.Path)
+			cidMap[att.ContentID] = url
+			cidMap[strings.Trim(att.ContentID, "<>")] = url
+		}
+		if att.Filename != "" && att.Path != "" {
+			url := "/api/blobs/" + filepath.ToSlash(att.Path)
+			cidMap[att.Filename] = url
+		}
+	}
+
+	updatedAttachments := append([]AttachmentMeta(nil), attachments...)
+	modified := false
+
+	if rawBlobPath != "" {
+		absBlob := filepath.Join(dataDir, "blobs", rawBlobPath)
+		if rawBytes, err := os.ReadFile(absBlob); err == nil {
+			parsed, err := ParseMIME(rawBytes, dataDir)
+			if err == nil {
+				for _, att := range parsed.Attachments {
+					if att.ContentID != "" {
+						url := "/api/blobs/" + filepath.ToSlash(att.Path)
+						cidMap[att.ContentID] = url
+						cidMap[strings.Trim(att.ContentID, "<>")] = url
+						found := false
+						for _, existing := range updatedAttachments {
+							if existing.Path == att.Path || (existing.ContentID != "" && existing.ContentID == att.ContentID) {
+								found = true
+								break
+							}
+						}
+						if !found {
+							updatedAttachments = append(updatedAttachments, att)
+							modified = true
+						}
+					}
+				}
+			}
+		}
+	}
+
+	newBodyHTML := bodyHTML
+	for cid, url := range cidMap {
+		if strings.Contains(newBodyHTML, cid) {
+			newBodyHTML = replaceCID(newBodyHTML, cid, url)
+			modified = true
+		}
+	}
+
+	return newBodyHTML, updatedAttachments, modified
 }

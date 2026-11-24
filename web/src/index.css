@@ -144,6 +144,19 @@ body,
   animation: viewFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Email Body Layout & Image Resets */
+.email-content img,
+.prose.email-content img {
+  display: inline-block;
+  max-width: 100%;
+  height: auto;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.email-content table img {
+  margin: 0 !important;
+}
+
 /* Email Body Dark Canvas text contrast preservation */
 .email-canvas-dark [style*="color: #000"],
 .email-canvas-dark [style*="color:#000"],

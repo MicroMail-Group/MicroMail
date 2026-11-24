@@ -81,6 +81,26 @@ function cleanMessageHtml(rawHtml: string): CleanedContent {
     const parser = new DOMParser();
     const doc = parser.parseFromString(rawHtml, 'text/html');
 
+    // Process all images to ensure reliable loading and bypass referer/mixed-content blocks
+    const imgs = doc.querySelectorAll('img');
+    imgs.forEach((img) => {
+      // 1. Prevent hotlink protection and third-party referer blocks
+      img.setAttribute('referrerpolicy', 'no-referrer');
+
+      // 2. Default to lazy loading
+      img.setAttribute('loading', 'lazy');
+
+      // 3. Fallback: if direct load fails (adblockers, CORS, or hotlink 403), retry through MicroMail image proxy
+      const src = img.getAttribute('src') || '';
+      if (src && !src.startsWith('data:') && !src.startsWith('/api/')) {
+        img.setAttribute('data-original-src', src);
+        img.setAttribute(
+          'onerror',
+          "if(!this.dataset.proxied){this.dataset.proxied='1';this.src='/api/proxy/image?url='+encodeURIComponent(this.getAttribute('data-original-src')||this.src);}"
+        );
+      }
+    });
+
     const quoteSelectors = [
       'blockquote',
       '.gmail_quote',
@@ -91,9 +111,9 @@ function cleanMessageHtml(rawHtml: string): CleanedContent {
       '[id^="mail-editor-reference"]',
     ];
 
+    let foundQuotedHtml = '';
     const quoteEls = doc.querySelectorAll(quoteSelectors.join(','));
     if (quoteEls.length > 0) {
-      let foundQuotedHtml = '';
       quoteEls.forEach((el) => {
         foundQuotedHtml += el.outerHTML;
         const prev = el.previousSibling;
@@ -103,11 +123,11 @@ function cleanMessageHtml(rawHtml: string): CleanedContent {
         }
         el.parentNode?.removeChild(el);
       });
+    }
 
-      const cleanHtml = doc.body.innerHTML.trim();
-      if (cleanHtml.length > 0) {
-        return { clean: cleanHtml, quoted: foundQuotedHtml };
-      }
+    const cleanHtml = doc.body.innerHTML.trim();
+    if (cleanHtml.length > 0) {
+      return { clean: cleanHtml, quoted: foundQuotedHtml || undefined };
     }
   } catch {
     // fallback to original if parsing fails
@@ -775,7 +795,7 @@ export const MessageReader: React.FC<MessageReaderProps> = ({
                                 }`}
                               >
                                 <div
-                                  className={`prose prose-sm max-w-none break-words overflow-x-auto select-text ${
+                                  className={`prose prose-sm max-w-none break-words overflow-x-auto select-text email-content ${
                                     canvasTheme === 'light'
                                       ? 'text-slate-900'
                                       : 'dark:prose-invert text-slate-900 dark:text-slate-100'

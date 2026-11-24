@@ -57,4 +57,54 @@ func TestDKIMAndMIME(t *testing.T) {
 	if _, err := os.Stat(absBlob); os.IsNotExist(err) {
 		t.Errorf("blob file does not exist at %s", absBlob)
 	}
+
+	// 4. Inline image (CID) parsing & replacement (e.g. USPS package tracking / receipts)
+	rawMultipartRelated := []byte("From: auto-reply@usps.gov\r\n" +
+		"To: alice@example.com\r\n" +
+		"Subject: Your USPS Delivery Update\r\n" +
+		"Content-Type: multipart/related; boundary=\"boundary_12345\"\r\n" +
+		"\r\n" +
+		"--boundary_12345\r\n" +
+		"Content-Type: text/html; charset=utf-8\r\n" +
+		"\r\n" +
+		"<div><h1>USPS Delivery</h1><img src=\"cid:usps_logo_01@usps.com\"><p>In transit</p></div>\r\n" +
+		"--boundary_12345\r\n" +
+		"Content-Type: image/png\r\n" +
+		"Content-ID: <usps_logo_01@usps.com>\r\n" +
+		"Content-Disposition: inline; filename=\"logo.png\"\r\n" +
+		"\r\n" +
+		"\x89PNG\r\n\x1a\nfake_png_data\r\n" +
+		"--boundary_12345--\r\n")
+
+	parsedRelated, err := ParseMIME(rawMultipartRelated, tempDir)
+	if err != nil {
+		t.Fatalf("failed to parse multipart/related MIME: %v", err)
+	}
+	if len(parsedRelated.Attachments) == 0 {
+		t.Fatalf("expected 1 inline image attachment, got 0")
+	}
+	att := parsedRelated.Attachments[0]
+	if att.ContentID != "usps_logo_01@usps.com" {
+		t.Errorf("expected ContentID 'usps_logo_01@usps.com', got: %s", att.ContentID)
+	}
+	if !strings.Contains(parsedRelated.BodyHTML, "/api/blobs/") {
+		t.Errorf("expected BodyHTML to replace cid with /api/blobs/, got: %s", parsedRelated.BodyHTML)
+	}
+
+	// 5. Test ResolveMessageInlineImages with raw blob
+	savedBlob, err := SaveRawEmailBlob(tempDir, rawMultipartRelated)
+	if err != nil {
+		t.Fatalf("failed to save raw blob: %v", err)
+	}
+	unresolvedHTML := "<div><img src=\"cid:usps_logo_01@usps.com\"></div>"
+	resolvedHTML, newAtts, changed := ResolveMessageInlineImages(tempDir, unresolvedHTML, nil, savedBlob)
+	if !changed {
+		t.Errorf("expected ResolveMessageInlineImages to return changed=true")
+	}
+	if !strings.Contains(resolvedHTML, "/api/blobs/") {
+		t.Errorf("expected resolvedHTML to contain /api/blobs/, got: %s", resolvedHTML)
+	}
+	if len(newAtts) == 0 {
+		t.Errorf("expected newAtts to be populated from raw blob")
+	}
 }

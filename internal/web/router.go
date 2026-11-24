@@ -118,6 +118,7 @@ func (s *Server) setupRoutes() http.Handler {
 	mux.HandleFunc("POST /api/messages/draft", s.authMgr.RequireAuth(s.mailHdls.SaveDraft))
 	mux.HandleFunc("GET /api/messages/search", s.authMgr.RequireAuth(s.mailHdls.Search))
 	mux.HandleFunc("GET /api/blobs/", s.mailHdls.DownloadBlob)
+	mux.HandleFunc("GET /api/proxy/image", s.mailHdls.ProxyImage)
 	mux.HandleFunc("GET /api/system/dkim", s.mailHdls.GetDKIMInfo)
 	mux.HandleFunc("GET /api/system/diagnostics", s.authMgr.RequireAuth(s.diagHdls.RunDiagnostics))
 	mux.HandleFunc("POST /api/system/test-email", s.authMgr.RequireAuth(s.diagHdls.SendTestEmail))
