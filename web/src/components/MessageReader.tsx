@@ -232,9 +232,9 @@ export const MessageReader: React.FC<MessageReaderProps> = ({
       key={latest.thread_id || latest.id}
       className="flex-1 flex flex-col h-full bg-white dark:bg-slate-900 overflow-hidden relative select-text"
     >
-      {/* Thread Title & Actions Topbar - Fixed min-height to prevent layout shifts */}
-      <div className="p-3 md:p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 md:gap-4 min-h-[69px] flex-shrink-0">
-        <div className="flex items-center gap-2 truncate">
+      {/* Thread Title & Actions Topbar - Fixed 68px height to prevent layout shifts */}
+      <div className="h-[68px] min-h-[68px] max-h-[68px] px-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 flex-shrink-0 overflow-hidden">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           {onBack && (
             <button
               type="button"
@@ -245,18 +245,21 @@ export const MessageReader: React.FC<MessageReaderProps> = ({
               <ArrowLeft className="w-5 h-5" />
             </button>
           )}
-          <div className="min-w-0">
-            <h2 className="text-base md:text-lg font-bold text-slate-900 dark:text-slate-100 truncate">
+          <div className="min-w-0 flex-1">
+            <h2
+              className="text-base font-bold text-slate-900 dark:text-slate-100 truncate leading-6"
+              title={latest.subject || '(No subject)'}
+            >
               {latest.subject || '(No subject)'}
             </h2>
-            <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
-              <span>
+            <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5 truncate flex-nowrap min-w-0">
+              <span className="flex-shrink-0">
                 {messages.length} message{messages.length > 1 ? 's' : ''} in thread
               </span>
               {messages.length > 1 && (
                 <>
-                  <span>•</span>
-                  <div className="relative group inline-flex items-center">
+                  <span className="flex-shrink-0">•</span>
+                  <div className="relative group inline-flex items-center flex-shrink-0">
                     <button
                       type="button"
                       onClick={toggleAllCollapse}
@@ -274,8 +277,8 @@ export const MessageReader: React.FC<MessageReaderProps> = ({
                       {hasAnyExpanded ? 'Collapse all' : 'Expand all'}
                     </span>
                   </div>
-                  <span>•</span>
-                  <div className="hidden sm:inline-flex items-center gap-2.5 text-[11px] text-slate-500 dark:text-slate-400">
+                  <span className="hidden sm:inline flex-shrink-0">•</span>
+                  <div className="hidden sm:inline-flex items-center gap-2.5 text-[11px] text-slate-500 dark:text-slate-400 flex-shrink-0">
                     <span
                       className="inline-flex items-center gap-1.5"
                       title="Inbound received message"
@@ -297,8 +300,8 @@ export const MessageReader: React.FC<MessageReaderProps> = ({
                   </div>
                 </>
               )}
-              <span>•</span>
-              <span className="font-mono text-[11px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+              <span className="flex-shrink-0">•</span>
+              <span className="font-mono text-[11px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded flex-shrink-0">
                 Folder: {latest.folder}
               </span>
             </div>
@@ -306,7 +309,7 @@ export const MessageReader: React.FC<MessageReaderProps> = ({
         </div>
 
         {/* Global Thread Actions */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           {/* Addon Slot for Message Header Actions */}
           <SlotRenderer slot="message_header_action" />
 

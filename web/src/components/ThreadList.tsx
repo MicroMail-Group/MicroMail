@@ -98,8 +98,8 @@ export const ThreadList: React.FC<ThreadListProps> = ({
   return (
     <div className="w-full md:w-80 lg:w-96 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col h-full flex-shrink-0 animate-view-fade">
       {/* Header & Expandable Search */}
-      <div className="p-3 border-b border-slate-200 dark:border-slate-800">
-        <div className="relative flex items-center justify-between min-h-[36px] overflow-hidden">
+      <div className="h-[68px] min-h-[68px] max-h-[68px] px-4 border-b border-slate-200 dark:border-slate-800 flex items-center flex-shrink-0">
+        <div className="relative flex items-center justify-between w-full h-9 overflow-hidden">
           {/* Header Title & Mobile Menu Button */}
           <div
             className={`flex-1 min-w-0 flex items-center gap-2 truncate transition-all duration-300 ease-in-out ${
@@ -118,7 +118,7 @@ export const ThreadList: React.FC<ThreadListProps> = ({
                 <Menu className="w-5 h-5" />
               </button>
             )}
-            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 truncate">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 truncate leading-6">
               {folderName}
             </h2>
           </div>
@@ -343,25 +343,30 @@ export const ThreadList: React.FC<ThreadListProps> = ({
                   )}
                 </div>
 
-                {/* Row 3: Snippet (Locked Height) */}
-                <p className="text-xs text-slate-400 dark:text-slate-500 truncate mt-1 font-normal leading-4 h-4">
-                  {t.snippet || '...'}
-                </p>
-
-                {/* Row 4: Tags */}
-                {t.tags && t.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1.5 min-h-[20px]">
-                    {t.tags.map((tag, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded"
-                      >
-                        <Tag className="w-2.5 h-2.5" />
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                {/* Row 3: Snippet & Compact Tags (Guarantees constant height) */}
+                <div className="flex items-center justify-between gap-1.5 mt-1 h-4 overflow-hidden">
+                  <p className="text-xs text-slate-400 dark:text-slate-500 truncate flex-1 font-normal leading-4">
+                    {t.snippet || '...'}
+                  </p>
+                  {t.tags && t.tags.length > 0 && (
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {t.tags.slice(0, 2).map((tag, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded max-w-[85px] truncate"
+                        >
+                          <Tag className="w-2.5 h-2.5 flex-shrink-0" />
+                          <span className="truncate">{tag}</span>
+                        </span>
+                      ))}
+                      {t.tags.length > 2 && (
+                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">
+                          +{t.tags.length - 2}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })

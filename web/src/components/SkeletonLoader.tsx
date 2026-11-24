@@ -4,8 +4,8 @@ export const ThreadListSkeleton: React.FC = () => {
   return (
     <div className="divide-y divide-slate-100 dark:divide-slate-800/60 animate-in fade-in duration-200">
       {[1, 2, 3, 4, 5, 6].map((i) => (
-        <div key={i} className="p-3.5 space-y-2.5">
-          <div className="flex items-center justify-between">
+        <div key={i} className="p-3.5 space-y-2 h-[92px] box-border">
+          <div className="flex items-center justify-between h-5">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full animate-shimmer" />
               <div className="w-24 h-3.5 rounded-md animate-shimmer" />
@@ -13,8 +13,8 @@ export const ThreadListSkeleton: React.FC = () => {
             <div className="w-12 h-3 rounded-md animate-shimmer" />
           </div>
 
-          <div className="w-44 h-4 rounded-md animate-shimmer" />
-          <div className="w-full h-3 rounded-md animate-shimmer" />
+          <div className="w-44 h-5 rounded-md animate-shimmer" />
+          <div className="w-full h-4 rounded-md animate-shimmer" />
         </div>
       ))}
     </div>
@@ -25,9 +25,9 @@ export const MessageReaderSkeleton: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col h-full bg-white dark:bg-slate-900 overflow-hidden select-none">
       {/* Thread Title & Actions Topbar - Exact identical dimensions & padding as MessageReader */}
-      <div className="p-3 md:p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 md:gap-4 min-h-[69px]">
+      <div className="h-[68px] min-h-[68px] max-h-[68px] px-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 flex-shrink-0 overflow-hidden">
         <div className="min-w-0 space-y-1.5 flex-1">
-          <div className="w-56 md:w-80 h-5 md:h-6 rounded-md animate-shimmer" />
+          <div className="w-56 md:w-80 h-5 rounded-md animate-shimmer" />
           <div className="w-32 h-3.5 rounded-md animate-shimmer" />
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
