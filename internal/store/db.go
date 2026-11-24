@@ -20,7 +20,17 @@ type Store struct {
 
 func Open(dataDir string) (*Store, error) {
 	dbPath := filepath.Join(dataDir, "mail.db")
-	dsn := fmt.Sprintf("%s?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(ON)", dbPath)
+	dsn := fmt.Sprintf(
+		"%s?_pragma=busy_timeout(10000)"+
+			"&_pragma=journal_mode(WAL)"+
+			"&_pragma=synchronous(NORMAL)"+
+			"&_pragma=mmap_size(268435456)"+
+			"&_pragma=cache_size(-64000)"+
+			"&_pragma=temp_store(MEMORY)"+
+			"&_pragma=wal_autocheckpoint(1000)"+
+			"&_pragma=foreign_keys(ON)",
+		dbPath,
+	)
 
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
@@ -90,6 +100,12 @@ func (s *Store) migrate() error {
 		)
 	`)
 	_, _ = s.db.Exec(`CREATE INDEX IF NOT EXISTS idx_email_templates_user_id ON email_templates(user_id)`)
+
+	// High-performance secondary indexes for mail threading, fast lookups, and unread counts
+	_, _ = s.db.Exec(`CREATE INDEX IF NOT EXISTS idx_messages_thread_desc ON messages(thread_id, created_at DESC)`)
+	_, _ = s.db.Exec(`CREATE INDEX IF NOT EXISTS idx_messages_user_folder_unread ON messages(user_id, folder, is_read)`)
+	_, _ = s.db.Exec(`CREATE INDEX IF NOT EXISTS idx_messages_msg_id_header ON messages(message_id_header) WHERE message_id_header IS NOT NULL AND message_id_header != ''`)
+	_, _ = s.db.Exec(`CREATE INDEX IF NOT EXISTS idx_messages_in_reply_to ON messages(in_reply_to) WHERE in_reply_to IS NOT NULL AND in_reply_to != ''`)
 
 	return nil
 }

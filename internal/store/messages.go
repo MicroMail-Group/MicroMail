@@ -518,21 +518,29 @@ func (s *Store) ListThreads(userID, folder string, limit, offset int) ([]*Thread
 		limit = 50
 	}
 
-	// Group messages by thread_id within the folder
+	// Optimized 2-stage thread query: Page thread IDs first, then resolve summary fields only for the paged set
 	query := `
-		SELECT m.thread_id,
-		       (SELECT subject FROM messages WHERE thread_id = m.thread_id ORDER BY created_at ASC LIMIT 1) as initial_subject,
-		       (SELECT sender FROM messages WHERE thread_id = m.thread_id ORDER BY created_at DESC LIMIT 1) as latest_sender,
-		       (SELECT snippet FROM messages WHERE thread_id = m.thread_id ORDER BY created_at DESC LIMIT 1) as latest_snippet,
-		       COUNT(*) as msg_count,
-		       SUM(CASE WHEN is_read = 0 THEN 1 ELSE 0 END) as unread_count,
-		       MAX(created_at) as latest_at,
-		       (SELECT tags FROM messages WHERE thread_id = m.thread_id ORDER BY created_at DESC LIMIT 1) as latest_tags
-		FROM messages m
-		WHERE m.user_id = ? AND m.folder = ?
-		GROUP BY m.thread_id
-		ORDER BY latest_at DESC
-		LIMIT ? OFFSET ?
+		WITH paged_threads AS (
+			SELECT thread_id,
+			       COUNT(*) as msg_count,
+			       SUM(CASE WHEN is_read = 0 THEN 1 ELSE 0 END) as unread_count,
+			       MAX(created_at) as latest_at
+			FROM messages
+			WHERE user_id = ? AND folder = ?
+			GROUP BY thread_id
+			ORDER BY latest_at DESC
+			LIMIT ? OFFSET ?
+		)
+		SELECT pt.thread_id,
+		       (SELECT subject FROM messages WHERE thread_id = pt.thread_id ORDER BY created_at ASC LIMIT 1) as initial_subject,
+		       (SELECT sender FROM messages WHERE thread_id = pt.thread_id ORDER BY created_at DESC LIMIT 1) as latest_sender,
+		       (SELECT snippet FROM messages WHERE thread_id = pt.thread_id ORDER BY created_at DESC LIMIT 1) as latest_snippet,
+		       pt.msg_count,
+		       pt.unread_count,
+		       pt.latest_at,
+		       (SELECT tags FROM messages WHERE thread_id = pt.thread_id ORDER BY created_at DESC LIMIT 1) as latest_tags
+		FROM paged_threads pt
+		ORDER BY pt.latest_at DESC
 	`
 
 	rows, err := s.db.Query(query, userID, folder, limit, offset)
