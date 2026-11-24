@@ -21,6 +21,8 @@ import {
   ShieldCheck,
   Trash2,
   X,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
@@ -168,6 +170,9 @@ export const MessageReader: React.FC<MessageReaderProps> = ({
 }) => {
   const { user } = useAppSelector((state) => state.auth);
   const [viewMode, setViewMode] = useState<'html' | 'text'>('html');
+  const [canvasTheme, setCanvasTheme] = useState<'light' | 'dark'>(() => {
+    return (localStorage.getItem('micromail_email_canvas') as 'light' | 'dark') || 'light';
+  });
   const [securityModalMsg, setSecurityModalMsg] = useState<Message | null>(null);
   const [banners, setBanners] = useState<MessageBanner[]>(() => addonHost.getMessageBanners());
   const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({});
@@ -183,7 +188,7 @@ export const MessageReader: React.FC<MessageReaderProps> = ({
     });
   }, []);
 
-  if (isLoading) {
+  if (isLoading && (!messages || messages.length === 0)) {
     return <MessageReaderSkeleton />;
   }
 
@@ -225,10 +230,10 @@ export const MessageReader: React.FC<MessageReaderProps> = ({
   return (
     <div
       key={latest.thread_id || latest.id}
-      className="flex-1 flex flex-col h-full bg-white dark:bg-slate-900 overflow-hidden relative animate-view-fade select-text"
+      className="flex-1 flex flex-col h-full bg-white dark:bg-slate-900 overflow-hidden relative select-text"
     >
-      {/* Thread Title & Actions Topbar */}
-      <div className="p-3 md:p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 md:gap-4">
+      {/* Thread Title & Actions Topbar - Fixed min-height to prevent layout shifts */}
+      <div className="p-3 md:p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 md:gap-4 min-h-[69px] flex-shrink-0">
         <div className="flex items-center gap-2 truncate">
           {onBack && (
             <button
@@ -704,33 +709,74 @@ export const MessageReader: React.FC<MessageReaderProps> = ({
                       <div className="pt-4">
                         {msg.body_html ? (
                           <div>
-                            <div className="flex justify-end gap-2 mb-2">
-                              <button
-                                onClick={() => setViewMode('html')}
-                                className={`text-[11px] font-medium px-2 py-0.5 rounded transition-colors ${
-                                  viewMode === 'html'
-                                    ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white font-semibold'
-                                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
-                                }`}
-                              >
-                                HTML
-                              </button>
-                              <button
-                                onClick={() => setViewMode('text')}
-                                className={`text-[11px] font-medium px-2 py-0.5 rounded transition-colors ${
-                                  viewMode === 'text'
-                                    ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white font-semibold'
-                                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
-                                }`}
-                              >
-                                Plain Text
-                              </button>
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const next = canvasTheme === 'light' ? 'dark' : 'light';
+                                    setCanvasTheme(next);
+                                    localStorage.setItem('micromail_email_canvas', next);
+                                  }}
+                                  className="text-[11px] font-medium px-2 py-0.5 rounded transition-colors flex items-center gap-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60"
+                                  title={
+                                    canvasTheme === 'light'
+                                      ? 'Switch to dark email canvas'
+                                      : 'Switch to light email canvas'
+                                  }
+                                >
+                                  {canvasTheme === 'light' ? (
+                                    <>
+                                      <Sun className="w-3 h-3 text-amber-500" />
+                                      <span>Light Canvas</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Moon className="w-3 h-3 text-indigo-400" />
+                                      <span>Dark Canvas</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => setViewMode('html')}
+                                  className={`text-[11px] font-medium px-2 py-0.5 rounded transition-colors ${
+                                    viewMode === 'html'
+                                      ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white font-semibold'
+                                      : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                                  }`}
+                                >
+                                  HTML
+                                </button>
+                                <button
+                                  onClick={() => setViewMode('text')}
+                                  className={`text-[11px] font-medium px-2 py-0.5 rounded transition-colors ${
+                                    viewMode === 'text'
+                                      ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white font-semibold'
+                                      : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                                  }`}
+                                >
+                                  Plain Text
+                                </button>
+                              </div>
                             </div>
 
                             {viewMode === 'html' ? (
-                              <div>
+                              <div
+                                className={`rounded-xl p-4 md:p-6 transition-colors overflow-x-auto ${
+                                  canvasTheme === 'light'
+                                    ? 'bg-white text-slate-900 border border-slate-200/90 shadow-2xs'
+                                    : 'bg-slate-50/50 dark:bg-slate-950/70 text-slate-900 dark:text-slate-100 border border-slate-200/60 dark:border-slate-800/80 email-canvas-dark'
+                                }`}
+                              >
                                 <div
-                                  className="prose prose-sm dark:prose-invert max-w-none break-words overflow-x-auto select-text"
+                                  className={`prose prose-sm max-w-none break-words overflow-x-auto select-text ${
+                                    canvasTheme === 'light'
+                                      ? 'text-slate-900'
+                                      : 'dark:prose-invert text-slate-900 dark:text-slate-100'
+                                  }`}
                                   dangerouslySetInnerHTML={{
                                     __html:
                                       isQuotedShown && cleanedHtml.quoted
@@ -759,8 +805,20 @@ export const MessageReader: React.FC<MessageReaderProps> = ({
                                 )}
                               </div>
                             ) : (
-                              <div>
-                                <pre className="whitespace-pre-wrap font-sans text-sm text-slate-800 dark:text-slate-200 leading-relaxed select-text">
+                              <div
+                                className={`rounded-xl p-4 md:p-6 transition-colors overflow-x-auto ${
+                                  canvasTheme === 'light'
+                                    ? 'bg-white text-slate-900 border border-slate-200/90 shadow-2xs'
+                                    : 'bg-slate-50/50 dark:bg-slate-950/70 text-slate-900 dark:text-slate-100 border border-slate-200/60 dark:border-slate-800/80'
+                                }`}
+                              >
+                                <pre
+                                  className={`whitespace-pre-wrap font-sans text-sm leading-relaxed select-text ${
+                                    canvasTheme === 'light'
+                                      ? 'text-slate-900'
+                                      : 'text-slate-800 dark:text-slate-200'
+                                  }`}
+                                >
                                   {isQuotedShown && cleanedText.quoted
                                     ? msg.body_text
                                     : cleanedText.clean || '(No text content)'}
@@ -789,30 +847,74 @@ export const MessageReader: React.FC<MessageReaderProps> = ({
                           </div>
                         ) : (
                           <div>
-                            <pre className="whitespace-pre-wrap font-sans text-sm text-slate-800 dark:text-slate-200 leading-relaxed select-text">
-                              {isQuotedShown && cleanedText.quoted
-                                ? msg.body_text
-                                : cleanedText.clean || '(Empty message)'}
-                            </pre>
-                            {cleanedText.quoted && (
-                              <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <div className="flex items-center gap-1.5">
                                 <button
                                   type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleQuoted(msg.id);
+                                  onClick={() => {
+                                    const next = canvasTheme === 'light' ? 'dark' : 'light';
+                                    setCanvasTheme(next);
+                                    localStorage.setItem('micromail_email_canvas', next);
                                   }}
-                                  className="px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors inline-flex items-center gap-1"
+                                  className="text-[11px] font-medium px-2 py-0.5 rounded transition-colors flex items-center gap-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60"
                                   title={
-                                    isQuotedShown
-                                      ? 'Hide trimmed history'
-                                      : 'Show trimmed quoted history'
+                                    canvasTheme === 'light'
+                                      ? 'Switch to dark email canvas'
+                                      : 'Switch to light email canvas'
                                   }
                                 >
-                                  <span>{isQuotedShown ? 'Hide trimmed history' : '···'}</span>
+                                  {canvasTheme === 'light' ? (
+                                    <>
+                                      <Sun className="w-3 h-3 text-amber-500" />
+                                      <span>Light Canvas</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Moon className="w-3 h-3 text-indigo-400" />
+                                      <span>Dark Canvas</span>
+                                    </>
+                                  )}
                                 </button>
                               </div>
-                            )}
+                            </div>
+                            <div
+                              className={`rounded-xl p-4 md:p-6 transition-colors overflow-x-auto ${
+                                canvasTheme === 'light'
+                                  ? 'bg-white text-slate-900 border border-slate-200/90 shadow-2xs'
+                                  : 'bg-slate-50/50 dark:bg-slate-950/70 text-slate-900 dark:text-slate-100 border border-slate-200/60 dark:border-slate-800/80'
+                              }`}
+                            >
+                              <pre
+                                className={`whitespace-pre-wrap font-sans text-sm leading-relaxed select-text ${
+                                  canvasTheme === 'light'
+                                    ? 'text-slate-900'
+                                    : 'text-slate-800 dark:text-slate-200'
+                                }`}
+                              >
+                                {isQuotedShown && cleanedText.quoted
+                                  ? msg.body_text
+                                  : cleanedText.clean || '(Empty message)'}
+                              </pre>
+                              {cleanedText.quoted && (
+                                <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleQuoted(msg.id);
+                                    }}
+                                    className="px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors inline-flex items-center gap-1"
+                                    title={
+                                      isQuotedShown
+                                        ? 'Hide trimmed history'
+                                        : 'Show trimmed quoted history'
+                                    }
+                                  >
+                                    <span>{isQuotedShown ? 'Hide trimmed history' : '···'}</span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>

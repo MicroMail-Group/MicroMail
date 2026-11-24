@@ -269,24 +269,35 @@ export const ThreadList: React.FC<ThreadListProps> = ({
               <div
                 key={t.thread_id}
                 onClick={() => onSelectThread(t.thread_id)}
-                className={`p-3.5 cursor-pointer transition-colors text-left relative group ${
+                className={`p-3.5 cursor-pointer transition-colors text-left relative group select-none ${
                   isSelected
                     ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
                     : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                } ${t.has_unread ? 'font-semibold text-slate-900 dark:text-slate-100' : 'text-slate-600 dark:text-slate-400'}`}
+                }`}
               >
                 {isSelected && (
                   <span className="absolute left-0 top-0 bottom-0 w-1 bg-slate-950 dark:bg-white" />
                 )}
-                <div className="flex items-center justify-between text-xs mb-1">
+                {/* Row 1: Sender & Date */}
+                <div className="flex items-center justify-between text-xs mb-1 h-5">
                   <div className="flex items-center gap-1.5 truncate max-w-[70%]">
-                    {t.has_unread && (
-                      <span
-                        className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 shadow-sm"
-                        title="Unread"
-                      />
-                    )}
-                    <span className="truncate">{t.sender}</span>
+                    <span className="w-2 h-2 flex-shrink-0 flex items-center justify-center">
+                      {t.has_unread && (
+                        <span
+                          className="w-2 h-2 rounded-full bg-blue-500 shadow-sm"
+                          title="Unread"
+                        />
+                      )}
+                    </span>
+                    <span
+                      className={`truncate ${
+                        t.has_unread
+                          ? 'font-semibold text-slate-900 dark:text-slate-100'
+                          : 'font-medium text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      {t.sender}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <span className="text-[11px] text-slate-400 font-normal">
@@ -314,23 +325,32 @@ export const ThreadList: React.FC<ThreadListProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5">
-                  <div className="text-xs truncate font-medium text-slate-800 dark:text-slate-200 flex-1">
+                {/* Row 2: Subject & Message Count */}
+                <div className="flex items-center gap-1.5 h-5">
+                  <div
+                    className={`text-xs truncate flex-1 ${
+                      t.has_unread
+                        ? 'font-semibold text-slate-900 dark:text-slate-100'
+                        : 'font-medium text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
                     {t.subject || '(No subject)'}
                   </div>
                   {t.message_count > 1 && (
-                    <span className="px-1.5 py-0.2 text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded font-bold">
+                    <span className="px-1.5 py-0.5 text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded font-bold leading-none flex-shrink-0">
                       {t.message_count}
                     </span>
                   )}
                 </div>
 
-                <p className="text-xs text-slate-400 dark:text-slate-500 line-clamp-1 mt-1 font-normal">
+                {/* Row 3: Snippet (Locked Height) */}
+                <p className="text-xs text-slate-400 dark:text-slate-500 truncate mt-1 font-normal leading-4 h-4">
                   {t.snippet || '...'}
                 </p>
 
+                {/* Row 4: Tags */}
                 {t.tags && t.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1.5">
+                  <div className="flex flex-wrap gap-1 mt-1.5 min-h-[20px]">
                     {t.tags.map((tag, idx) => (
                       <span
                         key={idx}

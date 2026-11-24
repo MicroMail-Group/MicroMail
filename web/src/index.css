@@ -144,6 +144,22 @@ body,
   animation: viewFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Email Body Dark Canvas text contrast preservation */
+.email-canvas-dark [style*="color: #000"],
+.email-canvas-dark [style*="color:#000"],
+.email-canvas-dark [style*="color: black"],
+.email-canvas-dark [style*="color:black"],
+.email-canvas-dark [style*="color: rgb(0, 0, 0)"],
+.email-canvas-dark [style*="color:rgb(0,0,0)"],
+.email-canvas-dark [style*="color: #111"],
+.email-canvas-dark [style*="color:#111"],
+.email-canvas-dark [style*="color: #222"],
+.email-canvas-dark [style*="color:#222"],
+.email-canvas-dark [style*="color: #333"],
+.email-canvas-dark [style*="color:#333"] {
+  color: #f1f5f9 !important;
+}
+
 /* Universal Form Field Focus Styling - Black in Light Mode, White in Dark Mode */
 input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not(.border-0):focus,
 input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not(.border-0):focus-visible,
